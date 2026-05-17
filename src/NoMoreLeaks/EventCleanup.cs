@@ -14,7 +14,7 @@ namespace NoMoreLeaks
         {
             if (eventSource == null || owner == null) return;
 
-            MethodInfo handlerMethod = AccessTools.Method(owner.GetType(), methodName);
+            MethodInfo handlerMethod = FindInstanceMethod(owner.GetType(), methodName);
             if (handlerMethod == null)
             {
                 Debug.LogWarning("[NoMoreLeaks] Missing handler " + owner.GetType().FullName + "." + methodName);
@@ -67,7 +67,7 @@ namespace NoMoreLeaks
             Delegate current = field.GetValue(null) as Delegate;
             if (current == null) return;
 
-            MethodInfo handlerMethod = AccessTools.Method(owner.GetType(), methodName);
+            MethodInfo handlerMethod = FindInstanceMethod(owner.GetType(), methodName);
             if (handlerMethod == null)
             {
                 Debug.LogWarning("[NoMoreLeaks] Missing handler " + owner.GetType().FullName + "." + methodName);
@@ -146,6 +146,18 @@ namespace NoMoreLeaks
                 ParameterInfo[] parameters = method.GetParameters();
                 if (parameters.Length == 1 && typeof(Delegate).IsAssignableFrom(parameters[0].ParameterType))
                     return method;
+            }
+
+            return null;
+        }
+
+        private static MethodInfo FindInstanceMethod(Type type, string name)
+        {
+            while (type != null)
+            {
+                MethodInfo method = type.GetMethod(name, AnyInstance);
+                if (method != null) return method;
+                type = type.BaseType;
             }
 
             return null;

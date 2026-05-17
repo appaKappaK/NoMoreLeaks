@@ -7,6 +7,13 @@ This mod does not replace KSPCommunityFixes. It tries to prevent selected stock 
 ## Current Patch Targets
 
 - `ModuleCargoPart | OnEVAConstructionMode`
+- `ModuleInventoryPart | onPartActionUICreate`
+- `ModuleInventoryPart | onModuleInventoryChanged`
+- `ModuleInventoryPart | onEditorPartEvent`
+- `ModuleInventoryPart | OnPartPurchased`
+- `ModuleDeployableSolarPanel | onVesselChange`
+- `ModuleControlSurface | onVesselReferenceTransformSwitch`
+- `EVAConstructionModeEditor | OnClick`
 - `RunwayCollisionHandler | OnDestructibleLoaded`
 - `BuildingPickerItem | OnInViewChange`
 - `BuildingPickerItem | OnClick`
@@ -26,4 +33,3 @@ Requires Harmony 2 installed as:
 ```text
 GameData/000_Harmony/0Harmony.dll
 ```
-

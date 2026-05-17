@@ -1,0 +1,23 @@
+# Build intermediates
+bin/
+obj/
+**/bin/
+**/obj/
+
+# Generated plugin binaries
+GameData/NoMoreLeaks/Plugins/*.dll
+GameData/NoMoreLeaks/Plugins/*.pdb
+GameData/NoMoreLeaks/Plugins/*.mdb
+
+# Editor and OS files
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+.DS_Store
+Thumbs.db
+
+# Local logs and test exports
+*.log
+KSPCF-memory-leaks-*.txt

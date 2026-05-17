@@ -23,13 +23,13 @@ namespace NoMoreLeaks.Patches
         {
             if (instance == null) return;
 
-            EventCleanup.RemoveGameEvent(GameEvents.onPartActionUIShown, instance, "OnPartActionUIShown");
-            EventCleanup.RemoveGameEvent(GameEvents.onPartActionUIDismiss, instance, "OnPartActionUIDismiss");
-            EventCleanup.RemoveGameEvent(GameEvents.onVesselChange, instance, "OnVesselChange");
-            EventCleanup.RemoveGameEvent(GameEvents.onPartWillDie, instance, "OnPartWillDie");
-            EventCleanup.RemoveGameEvent(GameEvents.onSceneConfirmExit, instance, "OnLeavingScene");
-            EventCleanup.RemoveGameEvent(GameEvents.OnAnimationGroupRetractComplete, instance, "OnRetractCompleted");
-            EventCleanup.RemoveGameEvent(GameEvents.OnEVAConstructionMode, instance, "OnEVAConstructionMode");
+            EventCleanup.RemoveGameEvent(GameEvents.onPartActionUIShown, instance, typeof(ModuleGroundPart), "OnPartActionUIShown");
+            EventCleanup.RemoveGameEvent(GameEvents.onPartActionUIDismiss, instance, typeof(ModuleGroundPart), "OnPartActionUIDismiss");
+            EventCleanup.RemoveGameEvent(GameEvents.onVesselChange, instance, typeof(ModuleGroundPart), "OnVesselChange");
+            EventCleanup.RemoveGameEvent(GameEvents.onPartWillDie, instance, typeof(ModuleGroundPart), "OnPartWillDie");
+            EventCleanup.RemoveGameEvent(GameEvents.onSceneConfirmExit, instance, typeof(ModuleGroundPart), "OnLeavingScene");
+            EventCleanup.RemoveGameEvent(GameEvents.OnAnimationGroupRetractComplete, instance, typeof(ModuleGroundPart), "OnRetractCompleted");
+            EventCleanup.RemoveGameEvent(GameEvents.OnEVAConstructionMode, instance, typeof(ModuleCargoPart), "OnEVAConstructionMode");
 
             if (instance is ModuleGroundSciencePart sciencePart)
                 CleanupSciencePart(sciencePart);
@@ -43,26 +43,70 @@ namespace NoMoreLeaks.Patches
 
         private static void CleanupSciencePart(ModuleGroundSciencePart instance)
         {
-            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceDeregisterCluster, instance, "OnGroundScienceDeregisterCluster");
-            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceClusterUpdated, instance, "OnGroundScienceClusterUpdated");
-            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceClusterPowerStateChanged, instance, "OnGroundScienceClusterPowerStateChanged");
+            EventCleanup.RemoveGameEvent(GameEvents.onPartActionUIShown, instance, typeof(ModuleGroundSciencePart), "OnPartActionUIOpened");
+            EventCleanup.RemoveGameEvent(GameEvents.onPartActionUIDismiss, instance, typeof(ModuleGroundSciencePart), "OnPartActionUIDismiss");
+            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceDeregisterCluster, instance, typeof(ModuleGroundSciencePart), "OnGroundScienceDeregisterCluster");
+            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceClusterUpdated, instance, typeof(ModuleGroundSciencePart), "OnGroundScienceClusterUpdated");
+            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceClusterPowerStateChanged, instance, typeof(ModuleGroundSciencePart), "OnGroundScienceClusterPowerStateChanged");
         }
 
         private static void CleanupExperiment(ModuleGroundExperiment instance)
         {
-            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceGenerated, instance, "OnGroundScienceGenerated");
-            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceTransmitted, instance, "OnGroundScienceTransmitted");
+            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceGenerated, instance, typeof(ModuleGroundExperiment), "OnGroundScienceGenerated");
+            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceTransmitted, instance, typeof(ModuleGroundExperiment), "OnGroundScienceTransmitted");
         }
 
         private static void CleanupControl(ModuleGroundExpControl instance)
         {
-            EventCleanup.RemoveGameEvent(GameEvents.onGroundSciencePartDeployed, instance, "OnGroundSciencePartDeployed");
-            EventCleanup.RemoveGameEvent(GameEvents.onPartActionUIShown, instance, "OnPartActionUIOpened");
-            EventCleanup.RemoveGameEvent(GameEvents.onPartActionUIDismiss, instance, "OnPartActionUIDismiss");
-            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceClusterUpdated, instance, "OnGroundScienceClusterUpdated");
-            EventCleanup.RemoveGameEvent(GameEvents.onGroundSciencePartEnabledStateChanged, instance, "OnGroundSciencePartEnabledStateChanged");
-            EventCleanup.RemoveGameEvent(GameEvents.onGroundSciencePartRemoved, instance, "OnGroundScienceModuleRemoved");
-            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceClusterPowerStateChanged, instance, "OnGroundScienceClusterPowerStateChanged");
+            EventCleanup.RemoveGameEvent(GameEvents.onGroundSciencePartDeployed, instance, typeof(ModuleGroundExpControl), "OnGroundSciencePartDeployed");
+            EventCleanup.RemoveGameEvent(GameEvents.onPartActionUIShown, instance, typeof(ModuleGroundExpControl), "OnPartActionUIOpened");
+            EventCleanup.RemoveGameEvent(GameEvents.onPartActionUIDismiss, instance, typeof(ModuleGroundExpControl), "OnPartActionUIDismiss");
+            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceClusterUpdated, instance, typeof(ModuleGroundExpControl), "OnGroundScienceClusterUpdated");
+            EventCleanup.RemoveGameEvent(GameEvents.onGroundSciencePartEnabledStateChanged, instance, typeof(ModuleGroundExpControl), "OnGroundSciencePartEnabledStateChanged");
+            EventCleanup.RemoveGameEvent(GameEvents.onGroundSciencePartRemoved, instance, typeof(ModuleGroundExpControl), "OnGroundScienceModuleRemoved");
+            EventCleanup.RemoveGameEvent(GameEvents.onGroundScienceClusterPowerStateChanged, instance, typeof(ModuleGroundExpControl), "OnGroundScienceClusterPowerStateChanged");
+        }
+    }
+
+    [HarmonyPatch(typeof(ModuleGroundSciencePart), "OnDestroy")]
+    internal static class ModuleGroundSciencePartDestroyLeakPatch
+    {
+        private static void Prefix(ModuleGroundSciencePart __instance)
+        {
+            ModuleGroundPartLeakPatch.Cleanup(__instance);
+        }
+
+        private static void Postfix(ModuleGroundSciencePart __instance)
+        {
+            ModuleGroundPartLeakPatch.Cleanup(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(ModuleGroundExperiment), "OnDestroy")]
+    internal static class ModuleGroundExperimentDestroyLeakPatch
+    {
+        private static void Prefix(ModuleGroundExperiment __instance)
+        {
+            ModuleGroundPartLeakPatch.Cleanup(__instance);
+        }
+
+        private static void Postfix(ModuleGroundExperiment __instance)
+        {
+            ModuleGroundPartLeakPatch.Cleanup(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(ModuleGroundExpControl), "OnDestroy")]
+    internal static class ModuleGroundExpControlDestroyLeakPatch
+    {
+        private static void Prefix(ModuleGroundExpControl __instance)
+        {
+            ModuleGroundPartLeakPatch.Cleanup(__instance);
+        }
+
+        private static void Postfix(ModuleGroundExpControl __instance)
+        {
+            ModuleGroundPartLeakPatch.Cleanup(__instance);
         }
     }
 }

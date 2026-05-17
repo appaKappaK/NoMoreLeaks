@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
@@ -12,12 +13,21 @@ namespace NoMoreLeaks
 
         internal static void RemoveGameEvent(object eventSource, object owner, string methodName)
         {
+            RemoveGameEvent(eventSource, owner, null, methodName);
+        }
+
+        internal static void RemoveGameEvent(object eventSource, object owner, Type handlerDeclaringType, string methodName)
+        {
             if (eventSource == null || owner == null) return;
 
-            MethodInfo handlerMethod = FindInstanceMethod(owner.GetType(), methodName);
+            MethodInfo handlerMethod = handlerDeclaringType != null
+                ? handlerDeclaringType.GetMethod(methodName, AnyInstance)
+                : FindInstanceMethod(owner.GetType(), methodName);
+
             if (handlerMethod == null)
             {
-                Debug.LogWarning("[NoMoreLeaks] Missing handler " + owner.GetType().FullName + "." + methodName);
+                string typeName = handlerDeclaringType != null ? handlerDeclaringType.FullName : owner.GetType().FullName;
+                Debug.LogWarning("[NoMoreLeaks] Missing handler " + typeName + "." + methodName);
                 return;
             }
 
@@ -111,6 +121,47 @@ namespace NoMoreLeaks
                 field.SetValue(eventOwner, cleaned);
             else
                 Debug.LogWarning("[NoMoreLeaks] Missing delegate member " + type.FullName + "." + delegatePropertyName);
+        }
+
+        internal static int RemoveDestroyedOwners(object eventSource, Type ownerType)
+        {
+            if (eventSource == null || ownerType == null) return 0;
+
+            FieldInfo eventsField = AccessTools.Field(eventSource.GetType(), "events");
+            if (eventsField == null)
+            {
+                Debug.LogWarning("[NoMoreLeaks] Missing events list on " + eventSource.GetType().FullName);
+                return 0;
+            }
+
+            IList events = eventsField.GetValue(eventSource) as IList;
+            if (events == null) return 0;
+
+            int removed = 0;
+            for (int i = events.Count - 1; i >= 0; i--)
+            {
+                object eventEntry = events[i];
+                if (eventEntry == null) continue;
+
+                FieldInfo originatorField = AccessTools.Field(eventEntry.GetType(), "originator");
+                if (originatorField == null)
+                {
+                    Debug.LogWarning("[NoMoreLeaks] Missing event originator field on " + eventEntry.GetType().FullName);
+                    return removed;
+                }
+
+                object originator = originatorField.GetValue(eventEntry);
+                if (!ownerType.IsInstanceOfType(originator)) continue;
+
+                UnityEngine.Object unityObject = originator as UnityEngine.Object;
+                bool isDestroyedUnityObject = !ReferenceEquals(unityObject, null) && unityObject == null;
+                if (originator != null && !isDestroyedUnityObject) continue;
+
+                events.RemoveAt(i);
+                removed++;
+            }
+
+            return removed;
         }
 
         internal static object GetInstanceField(object source, string fieldName)

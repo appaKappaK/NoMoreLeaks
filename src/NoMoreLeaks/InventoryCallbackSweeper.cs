@@ -14,9 +14,11 @@ namespace NoMoreLeaks
             removed += EventCleanup.RemoveDestroyedOwners(GameEvents.OnInventoryPartOnMouseChanged, typeof(ModuleInventoryPart));
             removed += EventCleanup.RemoveDestroyedOwners(GameEvents.OnEVACargoMode, typeof(UIPartActionInventorySlot));
             removed += EventCleanup.RemoveDestroyedOwners(GameEvents.onEditorPartDeleted, typeof(UIPartActionInventorySlot));
+            removed += EventCleanup.RemoveDestroyedOwners(GameEvents.onVesselChange, typeof(Expansions.Serenity.ModuleRobotArmScanner));
+            removed += EventCleanup.RemoveDestroyedOwnersByTypeName(GameEvents.onEditorShipModified, "PlanetarySurfaceStructures.ModuleKPBSCorridorNodes");
 
             if (removed > 0)
-                Debug.Log("[NoMoreLeaks] Removed " + removed + " destroyed inventory callbacks");
+                Debug.Log("[NoMoreLeaks] Removed " + removed + " destroyed callback owners");
         }
     }
 }

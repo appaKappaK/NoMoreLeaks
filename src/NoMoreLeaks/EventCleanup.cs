@@ -151,7 +151,53 @@ namespace NoMoreLeaks
                 }
 
                 object originator = originatorField.GetValue(eventEntry);
-                if (!ownerType.IsInstanceOfType(originator)) continue;
+                string originatorTypeName = GetOriginatorTypeName(eventEntry);
+                if (!OwnerMatches(ownerType, originator, originatorTypeName)) continue;
+
+                UnityEngine.Object unityObject = originator as UnityEngine.Object;
+                bool isDestroyedUnityObject = !ReferenceEquals(unityObject, null) && unityObject == null;
+                if (originator != null && !isDestroyedUnityObject) continue;
+
+                events.RemoveAt(i);
+                removed++;
+            }
+
+            return removed;
+        }
+
+        internal static int RemoveDestroyedOwnersByTypeName(object eventSource, string ownerTypeName)
+        {
+            if (eventSource == null || string.IsNullOrEmpty(ownerTypeName)) return 0;
+
+            FieldInfo eventsField = AccessTools.Field(eventSource.GetType(), "events");
+            if (eventsField == null)
+            {
+                Debug.LogWarning("[NoMoreLeaks] Missing events list on " + eventSource.GetType().FullName);
+                return 0;
+            }
+
+            IList events = eventsField.GetValue(eventSource) as IList;
+            if (events == null) return 0;
+
+            int removed = 0;
+            for (int i = events.Count - 1; i >= 0; i--)
+            {
+                object eventEntry = events[i];
+                if (eventEntry == null) continue;
+
+                FieldInfo originatorField = AccessTools.Field(eventEntry.GetType(), "originator");
+                if (originatorField == null)
+                {
+                    Debug.LogWarning("[NoMoreLeaks] Missing event originator field on " + eventEntry.GetType().FullName);
+                    return removed;
+                }
+
+                object originator = originatorField.GetValue(eventEntry);
+                string originatorTypeName = GetOriginatorTypeName(eventEntry);
+
+                Type originatorType = originator != null ? originator.GetType() : null;
+                bool typeMatches = TypeNameMatches(originatorType, originatorTypeName, ownerTypeName);
+                if (!typeMatches) continue;
 
                 UnityEngine.Object unityObject = originator as UnityEngine.Object;
                 bool isDestroyedUnityObject = !ReferenceEquals(unityObject, null) && unityObject == null;
@@ -198,6 +244,33 @@ namespace NoMoreLeaks
             }
 
             return removed;
+        }
+
+        private static bool OwnerMatches(Type ownerType, object originator, string originatorTypeName)
+        {
+            if (originator != null && ownerType.IsInstanceOfType(originator)) return true;
+            return TypeNameMatches(null, originatorTypeName, ownerType.Name)
+                || TypeNameMatches(null, originatorTypeName, ownerType.FullName);
+        }
+
+        private static bool TypeNameMatches(Type originatorType, string originatorTypeName, string ownerTypeName)
+        {
+            if (originatorType != null)
+            {
+                if (originatorType.Name == ownerTypeName || originatorType.FullName == ownerTypeName) return true;
+            }
+
+            if (originatorTypeName == null) return false;
+
+            return originatorTypeName == ownerTypeName
+                || originatorTypeName.EndsWith("." + ownerTypeName, StringComparison.Ordinal)
+                || originatorTypeName.EndsWith(":" + ownerTypeName, StringComparison.Ordinal);
+        }
+
+        private static string GetOriginatorTypeName(object eventEntry)
+        {
+            FieldInfo originatorTypeField = AccessTools.Field(eventEntry.GetType(), "originatorType");
+            return originatorTypeField != null ? originatorTypeField.GetValue(eventEntry) as string : null;
         }
 
         internal static object GetInstanceField(object source, string fieldName)

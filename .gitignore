@@ -8,7 +8,7 @@ obj/
 GameData/NoMoreLeaks/Plugins/*.dll
 GameData/NoMoreLeaks/Plugins/*.pdb
 GameData/NoMoreLeaks/Plugins/*.mdb
-
+leak-sums/
 # Editor and OS files
 .vs/
 .vscode/

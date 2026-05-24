@@ -25,7 +25,7 @@ namespace NoMoreLeaks.Patches
                 Vessel vessel = FlightGlobals.Vessels[i];
                 if (vessel == null || vessel.orbitRenderer == null) continue;
 
-                EventCleanup.RemoveOwner(vessel.orbitRenderer.onVesselIconClicked, instance);
+                EventCleanup.RemoveDelegatesOwnedBy(vessel.orbitRenderer, "onVesselIconClicked", instance);
             }
         }
     }

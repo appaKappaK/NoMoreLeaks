@@ -10,6 +10,7 @@ namespace NoMoreLeaks
     {
         private const BindingFlags AnyInstance = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
         private const BindingFlags AnyStatic = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+        private static readonly Assembly StockAssembly = Assembly.GetAssembly(typeof(Part));
 
         internal static void RemoveGameEvent(object eventSource, object owner, string methodName)
         {
@@ -244,6 +245,94 @@ namespace NoMoreLeaks
             }
 
             return removed;
+        }
+
+        internal static int RemoveDestroyedStockGameEventOwners()
+        {
+            IDictionary eventsByName = GetStaticMember(typeof(BaseGameEvent), "eventsByName") as IDictionary;
+            if (eventsByName == null)
+            {
+                Debug.LogWarning("[NoMoreLeaks] Missing BaseGameEvent.eventsByName");
+                return 0;
+            }
+
+            int removed = 0;
+            foreach (DictionaryEntry eventEntry in eventsByName)
+                removed += RemoveDestroyedAssemblyOwnersFromEventSource(eventEntry.Value, StockAssembly);
+
+            return removed;
+        }
+
+        internal static int RemoveDestroyedDelegateMemberOwners(object source, string delegateMemberName)
+        {
+            if (source == null || string.IsNullOrEmpty(delegateMemberName)) return 0;
+
+            Type type = source.GetType();
+            PropertyInfo property = type.GetProperty(delegateMemberName, AnyInstance);
+            FieldInfo field = type.GetField(delegateMemberName, AnyInstance);
+            Delegate current = property != null
+                ? property.GetValue(source, null) as Delegate
+                : field != null ? field.GetValue(source) as Delegate : null;
+
+            if (current == null) return 0;
+
+            Delegate cleaned = current;
+            int removed = 0;
+            foreach (Delegate callback in current.GetInvocationList())
+            {
+                if (!IsDestroyedAssemblyOwnedUnityObject(callback.Target, StockAssembly)) continue;
+
+                cleaned = Delegate.Remove(cleaned, callback);
+                removed++;
+            }
+
+            if (removed == 0) return 0;
+
+            if (property != null)
+                property.SetValue(source, cleaned, null);
+            else if (field != null)
+                field.SetValue(source, cleaned);
+
+            return removed;
+        }
+
+        private static int RemoveDestroyedAssemblyOwnersFromEventSource(object eventSource, Assembly assembly)
+        {
+            if (eventSource == null || assembly == null) return 0;
+
+            FieldInfo eventsField = AccessTools.Field(eventSource.GetType(), "events");
+            if (eventsField == null) return 0;
+
+            IList events = eventsField.GetValue(eventSource) as IList;
+            if (events == null) return 0;
+
+            int removed = 0;
+            for (int i = events.Count - 1; i >= 0; i--)
+            {
+                object eventEntry = events[i];
+                if (eventEntry == null) continue;
+
+                FieldInfo originatorField = AccessTools.Field(eventEntry.GetType(), "originator");
+                if (originatorField == null) continue;
+
+                if (!IsDestroyedAssemblyOwnedUnityObject(originatorField.GetValue(eventEntry), assembly)) continue;
+
+                events.RemoveAt(i);
+                removed++;
+            }
+
+            return removed;
+        }
+
+        private static bool IsDestroyedAssemblyOwnedUnityObject(object owner, Assembly assembly)
+        {
+            if (owner == null || assembly == null) return false;
+
+            UnityEngine.Object unityObject = owner as UnityEngine.Object;
+            if (ReferenceEquals(unityObject, null)) return false;
+            if (unityObject != null) return false;
+
+            return owner.GetType().Assembly == assembly;
         }
 
         private static bool OwnerMatches(Type ownerType, object originator, string originatorTypeName)

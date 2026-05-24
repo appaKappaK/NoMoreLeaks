@@ -7,8 +7,8 @@ namespace NoMoreLeaks
     public sealed class Startup : MonoBehaviour
     {
         private const string HarmonyId = "matth.nomoreleaks";
-        private const float InventorySweepInterval = 0.5f;
-        private float nextInventorySweep;
+        private const float SweepInterval = 0.5f;
+        private float nextSweep;
 
         private void Awake()
         {
@@ -22,19 +22,14 @@ namespace NoMoreLeaks
         private void OnLevelWasLoaded(int level)
         {
             InventoryCallbackSweeper.Sweep();
-            nextInventorySweep = Time.realtimeSinceStartup + InventorySweepInterval;
+            nextSweep = Time.realtimeSinceStartup + SweepInterval;
         }
 
         private void Update()
         {
-            if (Time.realtimeSinceStartup < nextInventorySweep) return;
+            if (Time.realtimeSinceStartup < nextSweep) return;
 
-            nextInventorySweep = Time.realtimeSinceStartup + InventorySweepInterval;
-            InventoryCallbackSweeper.Sweep();
-        }
-
-        private void LateUpdate()
-        {
+            nextSweep = Time.realtimeSinceStartup + SweepInterval;
             InventoryCallbackSweeper.Sweep();
         }
     }

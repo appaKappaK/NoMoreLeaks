@@ -7,6 +7,7 @@ namespace NoMoreLeaks
         internal static void Sweep()
         {
             int removed = 0;
+            removed += EventCleanup.RemoveDestroyedStockGameEventOwners();
             removed += EventCleanup.RemoveDestroyedOwners(GameEvents.onPartActionUICreate, typeof(ModuleInventoryPart));
             removed += EventCleanup.RemoveDestroyedOwners(GameEvents.onModuleInventoryChanged, typeof(ModuleInventoryPart));
             removed += EventCleanup.RemoveDestroyedOwners(GameEvents.onEditorPartEvent, typeof(ModuleInventoryPart));
@@ -32,7 +33,7 @@ namespace NoMoreLeaks
                 Vessel vessel = FlightGlobals.Vessels[i];
                 if (vessel == null || vessel.orbitRenderer == null) continue;
 
-                removed += EventCleanup.RemoveDestroyedOwnersByTypeName(vessel.orbitRenderer.onVesselIconClicked, "SpaceTracking");
+                removed += EventCleanup.RemoveDestroyedDelegateMemberOwners(vessel.orbitRenderer, "onVesselIconClicked");
             }
 
             return removed;

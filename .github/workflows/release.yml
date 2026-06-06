@@ -24,6 +24,8 @@ jobs:
 
     env:
       KSP_ROOT: /stm/SteamLibrary/steamapps/common/Kerbal Space Program
+      KSP_REFERENCES_TAG: ksp-references
+      KSP_REFERENCES_ASSET: ksp-references.zip
 
     steps:
       - name: Check out repository
@@ -60,20 +62,21 @@ jobs:
 
       - name: Download KSP reference assemblies
         env:
+          GH_TOKEN: ${{ github.token }}
           KSP_REFERENCES_URL: ${{ secrets.KSP_REFERENCES_URL }}
           KSP_REFERENCES_TOKEN: ${{ secrets.KSP_REFERENCES_TOKEN }}
         run: |
-          if [ -z "$KSP_REFERENCES_URL" ]; then
-            echo "KSP_REFERENCES_URL secret is required."
-            echo "It must point to a zip containing GameData/000_Harmony/0Harmony.dll and KSP_x64_Data/Managed/*.dll references."
-            exit 1
-          fi
-
           mkdir -p refs
-          if [ -n "$KSP_REFERENCES_TOKEN" ]; then
-            curl -fL -H "Authorization: Bearer $KSP_REFERENCES_TOKEN" "$KSP_REFERENCES_URL" -o refs/ksp-references.zip
+          if [ -n "$KSP_REFERENCES_URL" ]; then
+            if [ -n "$KSP_REFERENCES_TOKEN" ]; then
+              curl -fL -H "Authorization: Bearer $KSP_REFERENCES_TOKEN" "$KSP_REFERENCES_URL" -o refs/ksp-references.zip
+            else
+              curl -fL "$KSP_REFERENCES_URL" -o refs/ksp-references.zip
+            fi
           else
-            curl -fL "$KSP_REFERENCES_URL" -o refs/ksp-references.zip
+            gh release download "$KSP_REFERENCES_TAG" \
+              --pattern "$KSP_REFERENCES_ASSET" \
+              --output refs/ksp-references.zip
           fi
 
           sudo mkdir -p "$KSP_ROOT"

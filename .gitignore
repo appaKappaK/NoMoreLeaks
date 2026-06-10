@@ -20,6 +20,7 @@ Thumbs.db
 
 # Local logs and test exports
 *.log
+/backups/
 KSPCF-memory-leaks-*.txt
 NoMoreLeaks-debug-*.txt
 instructions.txt

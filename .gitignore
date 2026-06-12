@@ -28,3 +28,4 @@ instructions.txt
 /export-ksp-memleaks.sh
 /summaries/*
 !/summaries/README.md
+!/summaries/exp-memleaks.sh
